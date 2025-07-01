@@ -88,13 +88,13 @@ public class UnmannedVendingMachine {
             }
 
             // 识别算法
-            List<List<RecognitionItem>> res = recognizeLayerGoods(layerGoods, beginWeight, endWeight);
+            List<List<RecognitionItem>> res = recognizeLayerGoods(layerGoods, beginWeight, endWeight, sensorTolerance);
             // 如果是空或者大于一个组合，则返回异常
             if (res.size() != 1) {
                 recognitionException.setLayer(i);
                 recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
                 recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
-                recognitionException.setException(ExceptionEnum.FOREIGN_OBJECT);
+                recognitionException.setException(ExceptionEnum.UNRECOGNIZED);
                 recognitionResult.getExceptions().add(recognitionException);
                 recognitionResult.setSuccessful(false);
                 continue;
@@ -113,6 +113,7 @@ public class UnmannedVendingMachine {
                 }
                 resMap.put(item.getGoodsId(), item);
             }
+
         }
         resMap.forEach((key, value) -> {
             recognitionResult.getItems().add(value);
@@ -127,12 +128,15 @@ public class UnmannedVendingMachine {
      * @param beginWeight
      * @param endWeight
      * @param layerGoods
+     * @param sensorTolerance
      */
-    public static List<List<RecognitionItem>> recognizeLayerGoods(List<LayerGoods> layerGoods, Integer beginWeight, Integer endWeight) {
+    public static List<List<RecognitionItem>> recognizeLayerGoods(List<LayerGoods> layerGoods, Integer beginWeight, Integer endWeight, int sensorTolerance) {
         List<List<RecognitionItem>> dfsResult = new ArrayList<>();
-        int diff = beginWeight - endWeight;
+        int diff = (beginWeight - endWeight);
+        int minDiff = diff - sensorTolerance;
+        int maxDiff = diff + sensorTolerance;
         // 进行深搜
-        dfs(layerGoods, dfsResult, new ArrayList<>(), diff, 0, 0);
+        dfs(layerGoods, dfsResult, new ArrayList<>(), minDiff, maxDiff, 0, 0);
 
         return dfsResult;
     }
@@ -141,18 +145,19 @@ public class UnmannedVendingMachine {
      * @param layerGoods     当前层商品列表
      * @param res            结果
      * @param curCombination 当前商品组合
-     * @param diff           拿的重量
+     * @param minDiff        拿的重量最小范围
+     * @param maxDiff        拿的重量最大范围
      * @param index          当前商品索引
      * @param curWeight      当前重量
      */
-    private static void dfs(List<LayerGoods> layerGoods, List<List<RecognitionItem>> res, List<RecognitionItem> curCombination, int diff, int index, int curWeight) {
-        if (curWeight == diff) {
+    private static void dfs(List<LayerGoods> layerGoods, List<List<RecognitionItem>> res, List<RecognitionItem> curCombination, int minDiff, int maxDiff, int index, int curWeight) {
+        if (curWeight >= minDiff && curWeight <= maxDiff) {
             res.add(new ArrayList<>(curCombination));
             return;
         }
 
         // 重量超出或已遍历所有商品，停止递归
-        if (curWeight > diff || index >= layerGoods.size()) {
+        if (curWeight > maxDiff || index >= layerGoods.size()) {
             return;
         }
 
@@ -165,6 +170,8 @@ public class UnmannedVendingMachine {
         // 0 不选当前商品，> 0 选当前商品
         for (int num = 0; num <= maxNum; num++) {
             int newWeight = curWeight + weight * num;
+            // 剪枝，后面的没有必要遍历
+            if (newWeight > maxDiff) break;
 
             // 选则添加到当前组合中
             if (num > 0) {
@@ -175,7 +182,7 @@ public class UnmannedVendingMachine {
             }
 
             // 处理下一个
-            dfs(layerGoods, res, curCombination, diff, index + 1, newWeight);
+            dfs(layerGoods, res, curCombination, minDiff, maxDiff, index + 1, newWeight);
 
             // 后序中进行回溯
             if (num > 0) {

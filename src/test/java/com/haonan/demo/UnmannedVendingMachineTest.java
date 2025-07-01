@@ -81,13 +81,51 @@ class UnmannedVendingMachineTest {
     /**
      * 初步跑通流程
      * 预取结果：6瓶可乐，2袋薯片，2瓶能量饮料
+     * 结果中，从不同层拿不同商品可以类加起来计算，不会重复
      */
     @Test
     void recognize() {
-        UnmannedVendingMachine unmannedVendingMachine = new UnmannedVendingMachine();
-        RecognitionResult recognize = unmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
         Assertions.assertNotNull(recognize);
         System.out.println(recognize);
+    }
+
+    /**
+     * 测试传感器误差边界
+     * 预取结果：第一层出现异常，因为范围变成了[1650, 1900]，存在多种方案，其余层拿到1瓶可乐，2瓶能量饮料
+     */
+    @Test
+    void recognizeWithTolerance() {
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 150);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
+
+    }
+
+    /**
+     * 测试传感器误差边界方案 2
+     * - 1层取一瓶可乐，但是开关门重量差设置成140，然后加上10的传感器误差就可以计算出来
+     * - 如果将传感器误差设置成8，则计算不出来取了1瓶可乐
+     */
+    @Test
+    void recognizeWithTolerance2() {
+        // 关门时各层重量
+        List<Layer> closeLayers = Arrays.asList(
+                new Layer(1, 1810),  // 5瓶可乐+2袋薯片(1800) 少了一袋薯片(150g)，测试写成140g
+                new Layer(2, 640),   // 无变化
+                new Layer(3, 2000),  // 无变化
+                new Layer(4, 1200),  // 无变化
+                new Layer(5, 1320),  // 4瓶能量饮料(330*4) 少了1瓶能量饮料
+                new Layer(6, 0),     // 无变化
+                new Layer(7, 600),   // 2瓶可乐(300*2) 少了1瓶可乐
+                new Layer(8, 750),   // 无变化
+                new Layer(9, 1000),  // 无变化
+                new Layer(10, 660)   // 2瓶能量饮料(330*2) 少了1瓶能量饮料
+        );
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
+
     }
 
     /**
@@ -102,7 +140,7 @@ class UnmannedVendingMachineTest {
         LayerGoods layerGood2 = new LayerGoods("泡面", 12, 5);
         LayerGoods layerGood3 = new LayerGoods("辣条", 4, 10);
         List<LayerGoods> layerGoods = List.of(layerGood, layerGood2, layerGood3);
-        List<List<RecognitionItem>> lists = UnmannedVendingMachine.recognizeLayerGoods(layerGoods, 124, 88);
+        List<List<RecognitionItem>> lists = UnmannedVendingMachine.recognizeLayerGoods(layerGoods, 124, 88, 10);
         Assertions.assertNotNull(lists);
         System.out.println(lists);
     }
