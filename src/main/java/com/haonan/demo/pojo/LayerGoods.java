@@ -1,9 +1,15 @@
 package com.haonan.demo.pojo;
 
-public class Stock {
-    private String goodsId; // 库存对应的商品
-    private int layer; // 库存对应的层架
-    private int num; // 库存数量
+public class LayerGoods {
+    public LayerGoods(String goodsId, int weight, int num) {
+        this.goodsId = goodsId;
+        this.weight = weight;
+        this.num = num;
+    }
+
+    private String goodsId;
+    private int weight;
+    private int num;
 
     public String getGoodsId() {
         return goodsId;
@@ -13,12 +19,12 @@ public class Stock {
         this.goodsId = goodsId;
     }
 
-    public int getLayer() {
-        return layer;
+    public int getWeight() {
+        return weight;
     }
 
-    public void setLayer(int layer) {
-        this.layer = layer;
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 
     public int getNum() {
@@ -31,9 +37,9 @@ public class Stock {
 
     @Override
     public String toString() {
-        return "Stock{" +
+        return "LayerGoods{" +
                 "goodsId='" + goodsId + '\'' +
-                ", layer=" + layer +
+                ", weight=" + weight +
                 ", num=" + num +
                 '}';
     }

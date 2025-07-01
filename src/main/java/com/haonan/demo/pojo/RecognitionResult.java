@@ -33,4 +33,13 @@ public class RecognitionResult {
     public void setExceptions(List<RecognitionException> exceptions) {
         this.exceptions = exceptions;
     }
+
+    @Override
+    public String toString() {
+        return "RecognitionResult{" +
+                "successful=" + successful +
+                ", items=" + items +
+                ", exceptions=" + exceptions +
+                '}';
+    }
 }

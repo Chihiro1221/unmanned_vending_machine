@@ -19,4 +19,12 @@ public class RecognitionItem {
     public void setNum(int num) {
         this.num = num;
     }
+
+    @Override
+    public String toString() {
+        return "RecognitionItem{" +
+                "goodsId='" + goodsId + '\'' +
+                ", num=" + num +
+                '}';
+    }
 }

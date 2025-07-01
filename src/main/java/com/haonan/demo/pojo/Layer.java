@@ -19,4 +19,12 @@ public class Layer {
     public void setWeight(int weight) {
         this.weight = weight;
     }
+
+    @Override
+    public String toString() {
+        return "Layer{" +
+                "index=" + index +
+                ", weight=" + weight +
+                '}';
+    }
 }

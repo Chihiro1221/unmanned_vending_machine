@@ -40,4 +40,14 @@ public class RecognitionException {
     public void setEndWeight(int endWeight) {
         this.endWeight = endWeight;
     }
+
+    @Override
+    public String toString() {
+        return "RecognitionException{" +
+                "layer=" + layer +
+                ", exception=" + exception +
+                ", beginWeight=" + beginWeight +
+                ", endWeight=" + endWeight +
+                '}';
+    }
 }
