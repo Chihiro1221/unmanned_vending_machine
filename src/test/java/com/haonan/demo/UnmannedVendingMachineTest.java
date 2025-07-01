@@ -4,13 +4,11 @@ import com.haonan.demo.pojo.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static com.haonan.demo.UnmannedVendingMachine.MAX_WEIGHT;
 import static com.haonan.demo.UnmannedVendingMachine.MIN_WEIGHT;
-import static org.junit.jupiter.api.Assertions.*;
 
 class UnmannedVendingMachineTest {
     List<Goods> goodsList = Arrays.asList(
@@ -94,7 +92,7 @@ class UnmannedVendingMachineTest {
 
     /**
      * 测试传感器误差边界
-     * 预取结果：第一层出现异常，因为范围变成了[1650, 1900]，存在多种方案，其余层拿到1瓶可乐，2瓶能量饮料
+     * 执行结果：第一层出现异常，因为范围变成了[0, 300]，存在多种方案，其余层拿到1瓶可乐，2瓶能量饮料
      */
     @Test
     void recognizeWithTolerance() {
@@ -156,8 +154,82 @@ class UnmannedVendingMachineTest {
         System.out.println(recognize);
     }
 
+
     /**
-     * 测试识别函数
+     * 测试不存在组合情况
+     * 执行结果：第一层出现未识别异常，其他层正常识别
+     */
+    @Test
+    void recognizeWithUnrecognized() {
+        // 关门时各层重量
+        List<Layer> closeLayers = Arrays.asList(
+                new Layer(1, 1935),  // 减少15g
+                new Layer(2, 640),   // 无变化
+                new Layer(3, 2000),  // 无变化
+                new Layer(4, 1200),  // 无变化
+                new Layer(5, 1320),  // 拿了一瓶能量饮料
+                new Layer(6, 0),     // 无变化
+                new Layer(7, 900),   // 无变化
+                new Layer(8, 750),   // 无变化
+                new Layer(9, 1000),  // 无变化
+                new Layer(10, 660)   // 拿了一瓶能量饮料
+        );
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
+    }
+
+    /**
+     * 测试存在多个组合情况
+     * 执行结果：第一层存在异常，其他层正常识别
+     */
+    @Test
+    void recognizeWithUnrecognized2() {
+        // 关门时各层重量
+        List<Layer> closeLayers = Arrays.asList(
+                new Layer(1, 1650),  // 减少300g，第一种组合:2袋干脆面,，第二种组合:1瓶可乐
+                new Layer(2, 640),   // 无变化
+                new Layer(3, 2000),  // 无变化
+                new Layer(4, 1200),  // 无变化
+                new Layer(5, 1320),  // 无变化
+                new Layer(6, 0),     // 无变化
+                new Layer(7, 900),   // 无变化
+                new Layer(8, 750),   // 无变化
+                new Layer(9, 1000),  // 无变化
+                new Layer(10, 660)   // 无变化
+        );
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
+    }
+
+    /**
+     * 测试一下某一层全拿的情况
+     * 执行结果：所有商品都被取走，没有异常情况
+     */
+    @Test
+    void recognizeWithALl() {
+        // 关门时各层重量
+        List<Layer> closeLayers = Arrays.asList(
+                new Layer(1, 0),     // 0 全拿走，5瓶可乐，3袋薯片
+                new Layer(2, 0),   // 无变化
+                new Layer(3, 0),  // 无变化
+                new Layer(4, 0),  // 无变化
+                new Layer(5, 0),  // 4瓶能量饮料(330*4) 少了1瓶能量饮料
+                new Layer(6, 0),     // 无变化
+                new Layer(7, 0),   // 2瓶可乐(300*2) 少了1瓶可乐
+                new Layer(8, 0),     // 全拿走，5袋薯片
+                new Layer(9, 0),  // 无变化
+                new Layer(10, 0)   // 2瓶能量饮料(330*2) 少了1瓶能量饮料
+        );
+
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
+    }
+
+    /**
+     * 测试 dfs 识别函数
      * 预设场景：用户拿了2包干脆面，2包辣条，1桶泡面
      * 执行结果：包含这个商品组合
      */

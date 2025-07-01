@@ -160,7 +160,7 @@ public class UnmannedVendingMachine {
             res.add(new ArrayList<>(curCombination));
             return;
         }
-
+        // 这块做包装容差判断
         // 重量超出或已遍历所有商品，停止递归
         if (curWeight > maxDiff || index >= layerGoods.size()) {
             return;
@@ -176,6 +176,7 @@ public class UnmannedVendingMachine {
         for (int num = 0; num <= maxNum; num++) {
             int newWeight = curWeight + weight * num;
             // 剪枝，后面的没有必要遍历
+            // 这块做包装容差判断
             if (newWeight > maxDiff) break;
 
             // 选则添加到当前组合中
