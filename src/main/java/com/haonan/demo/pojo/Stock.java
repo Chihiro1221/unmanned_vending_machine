@@ -1,6 +1,12 @@
 package com.haonan.demo.pojo;
 
 public class Stock {
+    public Stock(String goodsId, int layer, int num) {
+        this.goodsId = goodsId;
+        this.layer = layer;
+        this.num = num;
+    }
+
     private String goodsId; // 库存对应的商品
     private int layer; // 库存对应的层架
     private int num; // 库存数量

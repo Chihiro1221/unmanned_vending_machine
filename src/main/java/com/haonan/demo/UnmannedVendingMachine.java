@@ -4,6 +4,7 @@ import com.haonan.demo.enums.ExceptionEnum;
 import com.haonan.demo.pojo.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,8 +37,10 @@ public class UnmannedVendingMachine {
                                               int sensorTolerance) {
         // 构造初始化
         RecognitionResult recognitionResult = new RecognitionResult();
+        recognitionResult.setSuccessful(true);
         recognitionResult.setItems(new ArrayList<RecognitionItem>());
         recognitionResult.setExceptions(new ArrayList<RecognitionException>());
+        HashMap<String, RecognitionItem> resMap = new HashMap<>();
         // 转换成map方便操作
         Map<Integer, Integer> openLayersMap = openLayers.stream().collect(Collectors.toMap(Layer::getIndex, Layer::getWeight));
         Map<Integer, Integer> closeLayersMap = closeLayers.stream().collect(Collectors.toMap(Layer::getIndex, Layer::getWeight));
@@ -46,23 +49,25 @@ public class UnmannedVendingMachine {
         for (int i = 1; i <= MAX_LAYER; ++i) {
             Integer beginWeight = openLayersMap.get(i);
             Integer endWeight = closeLayersMap.get(i);
+            RecognitionException recognitionException = new RecognitionException();
             // 当前层重量约束判断
             if (!checkWeight(beginWeight) || !checkWeight(endWeight)) {
-                RecognitionException recognitionException = new RecognitionException();
                 recognitionException.setLayer(i);
                 recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
                 recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
                 recognitionException.setException(ExceptionEnum.SENSOR_ERROR);
                 recognitionResult.getExceptions().add(recognitionException);
+                recognitionResult.setSuccessful(false);
                 continue;
             }
             // 放入异物约束
             if (endWeight > beginWeight) {
-                RecognitionException recognitionException = new RecognitionException();
                 recognitionException.setLayer(i);
                 recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
                 recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
                 recognitionException.setException(ExceptionEnum.FOREIGN_OBJECT);
+                recognitionResult.getExceptions().add(recognitionException);
+                recognitionResult.setSuccessful(false);
                 continue;
             }
             // 没有变化
@@ -72,7 +77,9 @@ public class UnmannedVendingMachine {
 
             // 拿到当前层的商品信息
             List<LayerGoods> layerGoods = new ArrayList<>();
-            for (Stock stock : stockList) {
+            int finalI = i;
+            List<Stock> tmp = stockList.stream().filter(stock -> stock.getLayer() == finalI).toList();
+            for (Stock stock : tmp) {
                 String goodsId = stock.getGoodsId();
                 Integer weight = goodsMap.get(goodsId);
                 if (weight != null && weight > 0) {
@@ -82,7 +89,34 @@ public class UnmannedVendingMachine {
 
             // 识别算法
             List<List<RecognitionItem>> res = recognizeLayerGoods(layerGoods, beginWeight, endWeight);
+            // 如果是空或者大于一个组合，则返回异常
+            if (res.size() != 1) {
+                recognitionException.setLayer(i);
+                recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
+                recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
+                recognitionException.setException(ExceptionEnum.FOREIGN_OBJECT);
+                recognitionResult.getExceptions().add(recognitionException);
+                recognitionResult.setSuccessful(false);
+                continue;
+            }
+
+            /**
+             * 做最后的去重
+             */
+            List<RecognitionItem> recognitionItems = res.getFirst();
+            for (RecognitionItem item : recognitionItems) {
+                if (resMap.containsKey(item.getGoodsId())) {
+                    RecognitionItem recognitionItem = resMap.get(item.getGoodsId());
+                    recognitionItem.setNum(recognitionItem.getNum() + item.getNum());
+                    resMap.put(item.getGoodsId(), recognitionItem);
+                    continue;
+                }
+                resMap.put(item.getGoodsId(), item);
+            }
         }
+        resMap.forEach((key, value) -> {
+            recognitionResult.getItems().add(value);
+        });
         return recognitionResult;
     }
 

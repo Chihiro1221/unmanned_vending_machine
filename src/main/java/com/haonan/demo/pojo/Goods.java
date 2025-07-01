@@ -1,6 +1,11 @@
 package com.haonan.demo.pojo;
 
 public class Goods {
+    public Goods(String id, int weight) {
+        this.id = id;
+        this.weight = weight;
+    }
+
     private String id; // 6 位的商品编号，每个商品唯一
     private int weight; // 商品单件重量，单位 g
 
