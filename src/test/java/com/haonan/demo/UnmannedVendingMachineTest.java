@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.haonan.demo.UnmannedVendingMachine.MAX_WEIGHT;
+import static com.haonan.demo.UnmannedVendingMachine.MIN_WEIGHT;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UnmannedVendingMachineTest {
@@ -99,7 +101,6 @@ class UnmannedVendingMachineTest {
         RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 150);
         Assertions.assertNotNull(recognize);
         System.out.println(recognize);
-
     }
 
     /**
@@ -125,7 +126,34 @@ class UnmannedVendingMachineTest {
         RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
         Assertions.assertNotNull(recognize);
         System.out.println(recognize);
+    }
 
+    /**
+     * 测试传感器第1层与最后10层重量不在正常取值范围内
+     */
+    @Test
+    void recognizeWithSensor_error() {
+        Layer first = openLayers.getFirst();
+        Layer last = closeLayers.getLast();
+        first.setWeight(MIN_WEIGHT - 1);
+        last.setWeight(MAX_WEIGHT + 1);
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
+    }
+
+    /**
+     * 测试放入异物异常情况
+     */
+    @Test
+    void recognizeWithForeign_object() {
+        Layer openFirst = openLayers.getFirst();
+        Layer closeFirst = closeLayers.getFirst();
+        openFirst.setWeight(1000);
+        closeFirst.setWeight(2000);
+        RecognitionResult recognize = UnmannedVendingMachine.recognize(openLayers, closeLayers, goodsList, stockList, 10);
+        Assertions.assertNotNull(recognize);
+        System.out.println(recognize);
     }
 
     /**

@@ -16,9 +16,9 @@ import java.util.stream.Collectors;
  */
 public class UnmannedVendingMachine {
 
-    private final static int MAX_LAYER = 10;
-    private static final int MIN_WEIGHT = 0;
-    private static final int MAX_WEIGHT = 32767;
+    public final static int MAX_LAYER = 10;
+    public static final int MIN_WEIGHT = 0;
+    public static final int MAX_WEIGHT = 32767;
 
     /**
      * 取货识别
@@ -104,6 +104,7 @@ public class UnmannedVendingMachine {
         resMap.forEach((key, value) -> {
             recognitionResult.getItems().add(value);
         });
+        recognitionResult.setSuccessful(recognitionResult.getExceptions().isEmpty());
         return recognitionResult;
     }
 
