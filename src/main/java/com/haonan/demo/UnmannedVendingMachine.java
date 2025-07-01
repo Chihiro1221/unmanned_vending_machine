@@ -35,11 +35,12 @@ public class UnmannedVendingMachine {
                                               List<Goods> goodsList,
                                               List<Stock> stockList,
                                               int sensorTolerance) {
-        // 构造初始化
+        // 初始化结果类
         RecognitionResult recognitionResult = new RecognitionResult();
         recognitionResult.setSuccessful(true);
         recognitionResult.setItems(new ArrayList<RecognitionItem>());
         recognitionResult.setExceptions(new ArrayList<RecognitionException>());
+        // 商品数量累加map
         HashMap<String, RecognitionItem> resMap = new HashMap<>();
         // 转换成map方便操作
         Map<Integer, Integer> openLayersMap = openLayers.stream().collect(Collectors.toMap(Layer::getIndex, Layer::getWeight));
@@ -49,25 +50,16 @@ public class UnmannedVendingMachine {
         for (int i = 1; i <= MAX_LAYER; ++i) {
             Integer beginWeight = openLayersMap.get(i);
             Integer endWeight = closeLayersMap.get(i);
-            RecognitionException recognitionException = new RecognitionException();
             // 当前层重量约束判断
             if (!checkWeight(beginWeight) || !checkWeight(endWeight)) {
-                recognitionException.setLayer(i);
-                recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
-                recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
-                recognitionException.setException(ExceptionEnum.SENSOR_ERROR);
+                RecognitionException recognitionException = handleException(i, beginWeight, endWeight, ExceptionEnum.SENSOR_ERROR);
                 recognitionResult.getExceptions().add(recognitionException);
-                recognitionResult.setSuccessful(false);
                 continue;
             }
             // 放入异物约束
             if (endWeight > beginWeight) {
-                recognitionException.setLayer(i);
-                recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
-                recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
-                recognitionException.setException(ExceptionEnum.FOREIGN_OBJECT);
+                RecognitionException recognitionException = handleException(i, beginWeight, endWeight, ExceptionEnum.FOREIGN_OBJECT);
                 recognitionResult.getExceptions().add(recognitionException);
-                recognitionResult.setSuccessful(false);
                 continue;
             }
             // 没有变化
@@ -91,18 +83,13 @@ public class UnmannedVendingMachine {
             List<List<RecognitionItem>> res = recognizeLayerGoods(layerGoods, beginWeight, endWeight, sensorTolerance);
             // 如果是空或者大于一个组合，则返回异常
             if (res.size() != 1) {
-                recognitionException.setLayer(i);
-                recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
-                recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
-                recognitionException.setException(ExceptionEnum.UNRECOGNIZED);
+                // 转交其他方式 ...
+                RecognitionException recognitionException = handleException(i, beginWeight, endWeight, ExceptionEnum.UNRECOGNIZED);
                 recognitionResult.getExceptions().add(recognitionException);
-                recognitionResult.setSuccessful(false);
                 continue;
             }
 
-            /**
-             * 做最后的去重
-             */
+            // 对结果进行去重，商品数量累加
             List<RecognitionItem> recognitionItems = res.getFirst();
             for (RecognitionItem item : recognitionItems) {
                 if (resMap.containsKey(item.getGoodsId())) {
@@ -113,12 +100,29 @@ public class UnmannedVendingMachine {
                 }
                 resMap.put(item.getGoodsId(), item);
             }
-
         }
         resMap.forEach((key, value) -> {
             recognitionResult.getItems().add(value);
         });
         return recognitionResult;
+    }
+
+    /**
+     * 封装异常类返回
+     *
+     * @param i
+     * @param beginWeight
+     * @param endWeight
+     * @param exceptionEnum
+     * @return
+     */
+    private static RecognitionException handleException(int i, Integer beginWeight, Integer endWeight, ExceptionEnum exceptionEnum) {
+        RecognitionException recognitionException = new RecognitionException();
+        recognitionException.setLayer(i);
+        recognitionException.setBeginWeight(beginWeight == null ? -1 : beginWeight);
+        recognitionException.setEndWeight(endWeight == null ? -1 : endWeight);
+        recognitionException.setException(exceptionEnum);
+        return recognitionException;
     }
 
 
